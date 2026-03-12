@@ -2,22 +2,22 @@
 
 Fast CLI utilities for AI agents, written in Go. Replaces common Python tools with single-binary, zero-dependency (except stdlib) tools.
 
-## `agent-query` (this repo)
+## `agent-cli-utils` (this repo)
 
 Query and transform JSON/YAML data from stdin.
 
 ```bash
 # Get a nested field
-cat config.yaml | agent-query -q .server.port
+cat config.yaml | agent-cli-utils -q .server.port
 
 # Convert JSON to YAML
-cat data.json | agent-query -f yaml
+cat data.json | agent-cli-utils -f yaml
 
 # Convert YAML to JSON
-cat config.yaml | agent-query -f json
+cat config.yaml | agent-cli-utils -f json
 
 # Chain with other tools
-curl -s api/data | agent-query -q .results[0].id
+curl -s api/data | agent-cli-utils -q .results[0].id
 ```
 
 ## Installation

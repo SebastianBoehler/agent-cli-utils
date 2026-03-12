@@ -1,0 +1,4 @@
+interface:
+  display_name: "AgentEnv CLI"
+  short_description: "Validate environment variables"
+  default_prompt: "Use $agentenv-cli to validate required environment variables before running an agent task."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "AgentFS CLI"
+  short_description: "Probe bounded filesystem state"
+  default_prompt: "Use $agentfs-cli to inspect a directory tree and return a bounded machine-readable snapshot."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "AgentQ CLI"
+  short_description: "Query and convert structured data"
+  default_prompt: "Use $agentq-cli to query or convert JSON and YAML data for an agent workflow."

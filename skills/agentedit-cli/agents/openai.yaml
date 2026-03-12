@@ -1,0 +1,4 @@
+interface:
+  display_name: "AgentEdit CLI"
+  short_description: "Apply deterministic targeted edits"
+  default_prompt: "Use $agentedit-cli to apply deterministic targeted file edits from a JSON or YAML spec."

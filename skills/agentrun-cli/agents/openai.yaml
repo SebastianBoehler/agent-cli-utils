@@ -1,0 +1,4 @@
+interface:
+  display_name: "AgentRun CLI"
+  short_description: "Run commands with bounded output"
+  default_prompt: "Use $agentrun-cli to run a command with timeout and bounded output capture."

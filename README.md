@@ -163,6 +163,20 @@ GitHub Actions is configured for:
 - cross-platform builds for Linux, macOS, and Windows
 - build artifacts for all CLI tools
 
+## Codex Skills
+
+For easier agent integration, this repository also includes Codex skills under [`skills/`](./skills/).
+
+Available skills:
+
+- `$agentq-cli`
+- `$agentenv-cli`
+- `$agentfs-cli`
+- `$agentrun-cli`
+- `$agentedit-cli`
+
+Each skill tells another Codex instance when to use the CLI, how to invoke it from this repo or from `PATH`, and which flags are the right default for agent workflows.
+
 ## Open Source Project
 
 This repository is set up to be maintained as a proper open source project.

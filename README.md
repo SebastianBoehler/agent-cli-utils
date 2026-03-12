@@ -63,6 +63,23 @@ agentrun -timeout 2s -max-output 4096 -- journalctl -n 100
 agentrun -format text -- sh -c 'uname -a'
 ```
 
+### `agentedit`
+
+Apply deterministic targeted file edits from a JSON or YAML spec. This is usually a better fit for agents than generic patch parsing because edits can be exact-match validated before writing.
+
+```bash
+cat <<'EOF' > edits.yaml
+edits:
+  - path: README.md
+    action: replace
+    old: "Small Go CLIs"
+    new: "Small, deterministic Go CLIs"
+EOF
+
+agentedit -spec edits.yaml
+agentedit -spec edits.yaml -dry-run -format text
+```
+
 ## Install
 
 Install individual tools:
@@ -72,6 +89,7 @@ go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentq@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentenv@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentfs@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentrun@latest
+go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentedit@latest
 ```
 
 Build all tools locally:
@@ -82,6 +100,7 @@ go build -o bin/agentq ./cmd/agentq
 go build -o bin/agentenv ./cmd/agentenv
 go build -o bin/agentfs ./cmd/agentfs
 go build -o bin/agentrun ./cmd/agentrun
+go build -o bin/agentedit ./cmd/agentedit
 ```
 
 For smaller static Linux binaries on low-power boards:
@@ -114,6 +133,18 @@ agentfs -root . -max-depth 2 -preview-lines 2 > snapshot.json
 agentq -input snapshot.json -q .entries[0]
 ```
 
+Apply a safe targeted change:
+
+```bash
+cat <<'EOF' | agentedit -format text
+edits:
+  - path: config.toml
+    action: insert_after
+    anchor: "[server]\n"
+    new: "port = 8080\n"
+EOF
+```
+
 ## Design Goals
 
 - low startup overhead
@@ -121,6 +152,7 @@ agentq -input snapshot.json -q .entries[0]
 - JSON/YAML outputs for agent parsing
 - no Python or Node requirement
 - suitable for cross-compiling to ARM and minimal Linux images
+- exact-match file editing for agent-generated changes
 
 ## CI
 

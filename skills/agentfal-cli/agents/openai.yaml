@@ -1,0 +1,4 @@
+interface:
+  display_name: "AgentFal CLI"
+  short_description: "fal queue wrapper with structured output"
+  default_prompt: "Use $agentfal-cli to submit, inspect, or cancel fal queue requests with structured output."

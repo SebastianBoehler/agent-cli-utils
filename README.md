@@ -90,6 +90,26 @@ agentdoctor -profile smb-client -strict=false
 agentdoctor -cmd git -cmd curl -format json
 ```
 
+### `agentrunpod`
+
+Submit, inspect, and cancel RunPod serverless jobs with structured output and env-based configuration.
+
+```bash
+agentrunpod submit -endpoint "$RUNPOD_ENDPOINT_ID" -payload '{"prompt":"hello"}'
+agentrunpod status -endpoint "$RUNPOD_ENDPOINT_ID" -request "$JOB_ID"
+agentrunpod submit -sync -endpoint "$RUNPOD_ENDPOINT_ID" -input payload.yaml
+```
+
+### `agentfal`
+
+Submit, inspect, and cancel fal queue requests with structured output and env-based configuration.
+
+```bash
+agentfal submit -model "$FAL_MODEL" -payload '{"prompt":"hello"}'
+agentfal status -model "$FAL_MODEL" -request "$REQUEST_ID" -logs
+agentfal result -model "$FAL_MODEL" -request "$REQUEST_ID"
+```
+
 ## Install
 
 Install individual tools:
@@ -101,6 +121,8 @@ go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentfs@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentrun@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentedit@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentdoctor@latest
+go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentrunpod@latest
+go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentfal@latest
 ```
 
 Build all tools locally:
@@ -113,6 +135,8 @@ go build -o bin/agentfs ./cmd/agentfs
 go build -o bin/agentrun ./cmd/agentrun
 go build -o bin/agentedit ./cmd/agentedit
 go build -o bin/agentdoctor ./cmd/agentdoctor
+go build -o bin/agentrunpod ./cmd/agentrunpod
+go build -o bin/agentfal ./cmd/agentfal
 ```
 
 For smaller static Linux binaries on low-power boards:
@@ -163,6 +187,19 @@ Diagnose a missing SMB client before connecting a Windows server:
 agentdoctor -profile smb-client -format text
 ```
 
+Submit a prompt to a remote inference queue:
+
+```bash
+agentfal submit -model "$FAL_MODEL" -payload '{"prompt":"an orange robot"}'
+```
+
+Kick off a RunPod serverless job and poll it later:
+
+```bash
+agentrunpod submit -endpoint "$RUNPOD_ENDPOINT_ID" -payload '{"prompt":"hello"}'
+agentrunpod result -endpoint "$RUNPOD_ENDPOINT_ID" -request "$JOB_ID"
+```
+
 ## Design Goals
 
 - low startup overhead
@@ -194,6 +231,8 @@ Available skills:
 - `$agentrun-cli`
 - `$agentedit-cli`
 - `$agentdoctor-cli`
+- `$agentrunpod-cli`
+- `$agentfal-cli`
 
 Each skill tells another Codex instance when to use the CLI, how to invoke it from this repo or from `PATH`, and which flags are the right default for agent workflows.
 

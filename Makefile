@@ -1,5 +1,5 @@
 BIN_DIR := bin
-TOOLS := agentq agentenv agentfs agentrun agentedit agentdoctor
+TOOLS := agentq agentenv agentfs agentrun agentedit agentdoctor agentrunpod agentfal
 
 .PHONY: build test fmtcheck check clean
 
@@ -11,6 +11,8 @@ build:
 	go build -o $(BIN_DIR)/agentrun ./cmd/agentrun
 	go build -o $(BIN_DIR)/agentedit ./cmd/agentedit
 	go build -o $(BIN_DIR)/agentdoctor ./cmd/agentdoctor
+	go build -o $(BIN_DIR)/agentrunpod ./cmd/agentrunpod
+	go build -o $(BIN_DIR)/agentfal ./cmd/agentfal
 
 test:
 	go test ./...

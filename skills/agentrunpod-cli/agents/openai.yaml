@@ -1,0 +1,4 @@
+interface:
+  display_name: "AgentRunPod CLI"
+  short_description: "RunPod job wrapper with structured output"
+  default_prompt: "Use $agentrunpod-cli to submit, inspect, or cancel RunPod jobs with JSON or YAML output."

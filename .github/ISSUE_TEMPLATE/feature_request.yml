@@ -1,0 +1,30 @@
+name: Feature request
+description: Suggest a new CLI tool or an improvement to an existing one.
+title: "[feature] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please focus on concrete agent workflows, especially low-compute, embedded, or edge use cases.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What agent problem are you trying to solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the CLI behavior, inputs, outputs, and expected exit codes.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Deployment context
+      description: Hardware, OS, runtime, and agent framework details.
+      placeholder: Raspberry Pi 4, Alpine Linux, PicoClaw worker

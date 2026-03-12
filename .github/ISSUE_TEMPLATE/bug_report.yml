@@ -1,0 +1,42 @@
+name: Bug report
+description: Report a broken command, regression, or behavior mismatch.
+title: "[bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please include enough detail to reproduce it on a clean machine.
+  - type: input
+    id: tool
+    attributes:
+      label: Tool
+      description: Which CLI is affected?
+      placeholder: agentq
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug and the expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Commands, input data, and environment details.
+      placeholder: |
+        1. Run ...
+        2. Pipe ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output
+      description: Paste stdout, stderr, or screenshots if relevant.
+      render: shell

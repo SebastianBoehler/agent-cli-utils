@@ -1,0 +1,70 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            artifact_suffix: linux-amd64
+          - goos: linux
+            goarch: arm64
+            artifact_suffix: linux-arm64
+          - goos: linux
+            goarch: arm
+            goarm: "7"
+            artifact_suffix: linux-armv7
+          - goos: darwin
+            goarch: amd64
+            artifact_suffix: darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            artifact_suffix: darwin-arm64
+          - goos: windows
+            goarch: amd64
+            artifact_suffix: windows-amd64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build binaries
+        env:
+          CGO_ENABLED: 0
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
+        run: |
+          mkdir -p dist
+          for tool in agentq agentenv agentfs agentrun; do
+            ext=""
+            if [ "${GOOS}" = "windows" ]; then
+              ext=".exe"
+            fi
+            suffix="${GOOS}-${GOARCH}"
+            if [ -n "${GOARM}" ]; then
+              suffix="${suffix}v${GOARM}"
+            fi
+            go build -trimpath -ldflags="-s -w" -o "dist/${tool}-${suffix}${ext}" "./cmd/${tool}"
+          done
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-cli-utils-${{ matrix.artifact_suffix }}
+          path: dist/

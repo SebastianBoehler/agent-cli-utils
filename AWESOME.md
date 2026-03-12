@@ -16,6 +16,7 @@ This list links to upstream projects instead of vendoring them as git submodules
 - [`agentfs`](./cmd/agentfs) - Bounded filesystem inspection for cheap machine-readable snapshots.
 - [`agentrun`](./cmd/agentrun) - Timeout- and output-bounded command execution.
 - [`agentedit`](./cmd/agentedit) - Deterministic targeted file edits from JSON or YAML specs, designed for agent-generated changes.
+- [`agentdoctor`](./cmd/agentdoctor) - Host dependency and capability checks for workflows like SMB, SSH, and HTTP fetches.
 
 ## Google Workspace and Google APIs
 

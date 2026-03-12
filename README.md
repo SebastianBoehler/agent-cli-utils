@@ -80,6 +80,16 @@ agentedit -spec edits.yaml
 agentedit -spec edits.yaml -dry-run -format text
 ```
 
+### `agentdoctor`
+
+Check host dependencies and missing tools before a workflow starts. This is useful for issues like “SMB client missing” when connecting Windows shares or other external systems.
+
+```bash
+agentdoctor -profile smb-client -format text
+agentdoctor -profile smb-client -strict=false
+agentdoctor -cmd git -cmd curl -format json
+```
+
 ## Install
 
 Install individual tools:
@@ -90,6 +100,7 @@ go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentenv@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentfs@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentrun@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentedit@latest
+go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentdoctor@latest
 ```
 
 Build all tools locally:
@@ -101,6 +112,7 @@ go build -o bin/agentenv ./cmd/agentenv
 go build -o bin/agentfs ./cmd/agentfs
 go build -o bin/agentrun ./cmd/agentrun
 go build -o bin/agentedit ./cmd/agentedit
+go build -o bin/agentdoctor ./cmd/agentdoctor
 ```
 
 For smaller static Linux binaries on low-power boards:
@@ -145,6 +157,12 @@ edits:
 EOF
 ```
 
+Diagnose a missing SMB client before connecting a Windows server:
+
+```bash
+agentdoctor -profile smb-client -format text
+```
+
 ## Design Goals
 
 - low startup overhead
@@ -153,6 +171,7 @@ EOF
 - no Python or Node requirement
 - suitable for cross-compiling to ARM and minimal Linux images
 - exact-match file editing for agent-generated changes
+- preflight dependency checks for workflows like SMB, SSH, and HTTP access
 
 ## CI
 
@@ -174,6 +193,7 @@ Available skills:
 - `$agentfs-cli`
 - `$agentrun-cli`
 - `$agentedit-cli`
+- `$agentdoctor-cli`
 
 Each skill tells another Codex instance when to use the CLI, how to invoke it from this repo or from `PATH`, and which flags are the right default for agent workflows.
 

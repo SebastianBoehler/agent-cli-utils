@@ -1,0 +1,4 @@
+interface:
+  display_name: "AgentDoctor CLI"
+  short_description: "Check host dependencies and tools"
+  default_prompt: "Use $agentdoctor-cli to check host dependencies such as SMB clients before an agent workflow runs."

@@ -51,7 +51,7 @@ jobs:
           GOARM: ${{ matrix.goarm }}
         run: |
           mkdir -p dist
-          for tool in agentq agentenv agentfs agentrun agentedit; do
+          for tool in agentq agentenv agentfs agentrun agentedit agentdoctor; do
             ext=""
             if [ "${GOOS}" = "windows" ]; then
               ext=".exe"

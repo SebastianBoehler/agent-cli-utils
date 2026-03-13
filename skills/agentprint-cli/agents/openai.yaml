@@ -1,0 +1,4 @@
+interface:
+  display_name: "AgentPrint CLI"
+  short_description: "Discover, repair, and print through local CUPS tooling"
+  default_prompt: "Use $agentprint-cli to manage local CUPS printers with structured output."

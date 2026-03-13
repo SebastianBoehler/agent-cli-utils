@@ -110,6 +110,20 @@ agentfal status -model "$FAL_MODEL" -request "$REQUEST_ID" -logs
 agentfal result -model "$FAL_MODEL" -request "$REQUEST_ID"
 ```
 
+### `agentprint`
+
+Wrap local CUPS tools for queue discovery, queue repair, and bounded print submission with machine-readable output by default.
+
+```bash
+agentprint list
+agentprint discover -format tsv
+agentprint ensure -printer office -match "Office Laser" -default
+agentprint print -printer office -input ./label.pdf -duplex -media A4 -fit-to-page
+agentprint print -printer office https://example.com/report.pdf -color-mode monochrome
+```
+
+Output defaults to JSON. `list` and `discover` also support `-format text` and `-format tsv` for quick terminal inspection.
+
 ## Install
 
 Install individual tools:
@@ -123,6 +137,7 @@ go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentedit@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentdoctor@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentrunpod@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentfal@latest
+go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentprint@latest
 ```
 
 Build all tools locally:
@@ -137,6 +152,7 @@ go build -o bin/agentedit ./cmd/agentedit
 go build -o bin/agentdoctor ./cmd/agentdoctor
 go build -o bin/agentrunpod ./cmd/agentrunpod
 go build -o bin/agentfal ./cmd/agentfal
+go build -o bin/agentprint ./cmd/agentprint
 ```
 
 For smaller static Linux binaries on low-power boards:
@@ -193,6 +209,26 @@ Submit a prompt to a remote inference queue:
 agentfal submit -model "$FAL_MODEL" -payload '{"prompt":"an orange robot"}'
 ```
 
+Discover and repair a printer queue before printing:
+
+```bash
+agentprint discover -format json
+agentprint ensure -printer office -match "Office Laser" -default
+agentprint print -printer office -input ./document.pdf -copies 2 -duplex -fit-to-page
+```
+
+Downstream PicoClaw migration:
+
+```bash
+# old helper surface
+printer print --printer office ./document.pdf
+
+# new shared CLI
+agentprint print -printer office -input ./document.pdf
+```
+
+If an existing board image or shell wrapper still expects `printer`, keep a thin compatibility shim that shells out to `agentprint` during the transition.
+
 Kick off a RunPod serverless job and poll it later:
 
 ```bash
@@ -209,6 +245,7 @@ agentrunpod result -endpoint "$RUNPOD_ENDPOINT_ID" -request "$JOB_ID"
 - suitable for cross-compiling to ARM and minimal Linux images
 - exact-match file editing for agent-generated changes
 - preflight dependency checks for workflows like SMB, SSH, and HTTP access
+- bounded CUPS printer discovery, queue repair, and print submission
 
 ## CI
 
@@ -233,6 +270,7 @@ Available skills:
 - `$agentdoctor-cli`
 - `$agentrunpod-cli`
 - `$agentfal-cli`
+- `$agentprint-cli`
 
 Each skill tells another Codex instance when to use the CLI, how to invoke it from this repo or from `PATH`, and which flags are the right default for agent workflows.
 

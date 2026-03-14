@@ -124,6 +124,27 @@ agentprint print -printer office https://example.com/report.pdf -color-mode mono
 
 Output defaults to JSON. `list` and `discover` also support `-format text` and `-format tsv` for quick terminal inspection.
 
+### `agentmd`
+
+Convert common files to Markdown using a native Go binary with no Python or Node runtime.
+
+Day-1 support focuses on low-friction and common formats:
+
+- plain text and Markdown
+- HTML
+- CSV
+- JSON, YAML, and XML
+- ZIP archives with recursive conversion of supported entries
+- basic OOXML extraction for DOCX, XLSX, and PPTX
+
+```bash
+agentmd -input ./notes.html
+agentmd -input ./report.docx
+agentmd -input ./sheet.xlsx
+cat ./payload.json | agentmd -name payload.json
+agentmd -input ./bundle.zip -format json
+```
+
 ## Install
 
 Install individual tools:
@@ -138,6 +159,7 @@ go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentdoctor@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentrunpod@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentfal@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentprint@latest
+go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentmd@latest
 ```
 
 Build all tools locally:
@@ -153,6 +175,7 @@ go build -o bin/agentdoctor ./cmd/agentdoctor
 go build -o bin/agentrunpod ./cmd/agentrunpod
 go build -o bin/agentfal ./cmd/agentfal
 go build -o bin/agentprint ./cmd/agentprint
+go build -o bin/agentmd ./cmd/agentmd
 ```
 
 For smaller static Linux binaries on low-power boards:
@@ -217,6 +240,14 @@ agentprint ensure -printer office -match "Office Laser" -default
 agentprint print -printer office -input ./document.pdf -copies 2 -duplex -fit-to-page
 ```
 
+Convert mixed agent artifacts into Markdown for indexing:
+
+```bash
+agentmd -input ./incident.docx
+agentmd -input ./metrics.xlsx
+agentmd -input ./archive.zip -format json
+```
+
 Downstream PicoClaw migration:
 
 ```bash
@@ -246,6 +277,7 @@ agentrunpod result -endpoint "$RUNPOD_ENDPOINT_ID" -request "$JOB_ID"
 - exact-match file editing for agent-generated changes
 - preflight dependency checks for workflows like SMB, SSH, and HTTP access
 - bounded CUPS printer discovery, queue repair, and print submission
+- native Markdown conversion for common agent-facing formats
 
 ## CI
 

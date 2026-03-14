@@ -218,11 +218,6 @@ func (s *Service) Ensure(ctx context.Context, options EnsureOptions) (EnsureResu
 	if err := s.requireTools("lpadmin", "cupsenable", "cupsaccept"); err != nil {
 		return EnsureResult{}, err
 	}
-	if options.MakeDefault {
-		if err := s.requireTools("lpoptions"); err != nil {
-			return EnsureResult{}, err
-		}
-	}
 
 	lpadminArgs := []string{"-p", queue, "-E", "-v", uri, "-m", "everywhere"}
 	if description := strings.TrimSpace(options.Description); description != "" {
@@ -242,8 +237,8 @@ func (s *Service) Ensure(ctx context.Context, options EnsureOptions) (EnsureResu
 		return EnsureResult{}, commandError("cupsaccept", []string{queue}, out, err)
 	}
 	if options.MakeDefault {
-		if out, err := s.call(ctx, "lpoptions", "-d", queue); err != nil {
-			return EnsureResult{}, commandError("lpoptions", []string{"-d", queue}, out, err)
+		if out, err := s.call(ctx, "lpadmin", "-d", queue); err != nil {
+			return EnsureResult{}, commandError("lpadmin", []string{"-d", queue}, out, err)
 		}
 	}
 

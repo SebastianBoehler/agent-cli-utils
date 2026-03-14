@@ -106,7 +106,7 @@ func TestEnsureDiscoversAndRepairsQueue(t *testing.T) {
 			switch name {
 			case "lpinfo":
 				return []byte("network ipps://office.local/ipp/print\nnetwork ipp://office.local/ipp/print\n"), nil
-			case "lpadmin", "cupsenable", "cupsaccept", "lpoptions":
+			case "lpadmin", "cupsenable", "cupsaccept":
 				return nil, nil
 			default:
 				return nil, fmt.Errorf("unexpected command %s %v", name, args)
@@ -139,7 +139,7 @@ func TestEnsureDiscoversAndRepairsQueue(t *testing.T) {
 		"lpadmin -p office -E -v ipps://office.local/ipp/print -m everywhere -D Office queue -L Lab",
 		"cupsenable office",
 		"cupsaccept office",
-		"lpoptions -d office",
+		"lpadmin -d office",
 	}
 	if !reflect.DeepEqual(gotCommands, wantCommands) {
 		t.Fatalf("commands = %#v, want %#v", gotCommands, wantCommands)

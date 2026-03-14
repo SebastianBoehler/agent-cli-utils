@@ -33,7 +33,7 @@ func (opts Options) normalized() convertOptions {
 	}
 
 	depth := opts.ArchiveDepth
-	if depth <= 0 {
+	if depth < 0 || (depth == 0 && opts.MaxArchiveEntries == 0) {
 		depth = 2
 	}
 

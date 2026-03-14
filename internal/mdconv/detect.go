@@ -21,6 +21,7 @@ var extensionFormats = map[string]string{
 	".yml":      "yaml",
 	".xml":      "xml",
 	".zip":      "zip",
+	".pdf":      "pdf",
 	".docx":     "docx",
 	".xlsx":     "xlsx",
 	".pptx":     "pptx",
@@ -73,6 +74,9 @@ func detectByContent(_ string, data []byte) (string, bool) {
 	}
 
 	lower := strings.ToLower(string(firstBytes(trimmed, 256)))
+	if strings.HasPrefix(lower, "%pdf-") {
+		return "pdf", true
+	}
 	if strings.HasPrefix(lower, "<!doctype html") || strings.HasPrefix(lower, "<html") {
 		return "html", true
 	}

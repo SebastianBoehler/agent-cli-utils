@@ -3,9 +3,33 @@ package mdconv
 import (
 	"archive/zip"
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 )
+
+func TestDetectFormatByContent(t *testing.T) {
+	service := NewService()
+	cases := []struct {
+		name   string
+		input  []byte
+		format string
+	}{
+		{name: "json", input: []byte(`{"ok":true}`), format: "json"},
+		{name: "xml", input: []byte(`<?xml version="1.0"?><root><item>1</item></root>`), format: "xml"},
+		{name: "html", input: []byte(`<html><body><p>hi</p></body></html>`), format: "html"},
+		{name: "csv", input: []byte("name,age\nsam,8\n"), format: "csv"},
+		{name: "text", input: []byte("plain text body"), format: "txt"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := service.detectFormat("", tc.input); got != tc.format {
+				t.Fatalf("detect format = %q, want %q", got, tc.format)
+			}
+		})
+	}
+}
 
 func TestConvertHTML(t *testing.T) {
 	service := NewService()
@@ -31,6 +55,34 @@ func TestConvertCSV(t *testing.T) {
 
 	if !strings.Contains(result.Markdown, "| name | score |") {
 		t.Fatalf("expected markdown table, got %q", result.Markdown)
+	}
+}
+
+func TestConvertJSONAndYAMLAndXML(t *testing.T) {
+	service := NewService()
+
+	jsonResult, err := service.Convert([]byte(`{"name":"alice","score":10}`), Options{Name: "sample.json"})
+	if err != nil {
+		t.Fatalf("convert json: %v", err)
+	}
+	if !strings.Contains(jsonResult.Markdown, "```json") {
+		t.Fatalf("expected json code fence, got %q", jsonResult.Markdown)
+	}
+
+	yamlResult, err := service.Convert([]byte("name: alice\nscore: 10\n"), Options{Name: "sample.yaml"})
+	if err != nil {
+		t.Fatalf("convert yaml: %v", err)
+	}
+	if !strings.Contains(yamlResult.Markdown, "```yaml") {
+		t.Fatalf("expected yaml code fence, got %q", yamlResult.Markdown)
+	}
+
+	xmlResult, err := service.Convert([]byte(`<?xml version="1.0"?><root><item>10</item></root>`), Options{Name: "sample.xml"})
+	if err != nil {
+		t.Fatalf("convert xml: %v", err)
+	}
+	if !strings.Contains(xmlResult.Markdown, "```xml") {
+		t.Fatalf("expected xml code fence, got %q", xmlResult.Markdown)
 	}
 }
 
@@ -117,7 +169,80 @@ func TestConvertZIP(t *testing.T) {
 	}
 }
 
+func TestConvertNestedZIPRespectsDepth(t *testing.T) {
+	service := NewService()
+
+	innerZip := buildZip(t, map[string]string{
+		"deep.txt": "nested payload",
+	})
+	outerZip := buildZipBytes(t, map[string][]byte{
+		"top.txt":   []byte("top level"),
+		"inner.zip": innerZip,
+	})
+
+	result, err := service.Convert(outerZip, Options{Name: "bundle.zip", ArchiveDepth: 1})
+	if err != nil {
+		t.Fatalf("convert outer zip: %v", err)
+	}
+
+	if len(result.Warnings) == 0 {
+		t.Fatalf("expected nesting warning, got none")
+	}
+	if strings.Contains(result.Markdown, "nested payload") {
+		t.Fatalf("expected nested archive content to be skipped at depth limit, got %q", result.Markdown)
+	}
+}
+
+func TestConvertZIPLargeEntryWarning(t *testing.T) {
+	service := NewService()
+
+	largeText := strings.Repeat("a", maxArchiveEntryBytes+1)
+	data := buildZip(t, map[string]string{
+		"too-large.txt": largeText,
+	})
+
+	_, err := service.Convert(data, Options{Name: "bundle.zip"})
+	if err == nil {
+		t.Fatal("expected error for unsupported oversized archive-only payload")
+	}
+	if !strings.Contains(err.Error(), "no supported files found") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestForceFormatOverridesDetection(t *testing.T) {
+	service := NewService()
+
+	result, err := service.Convert([]byte("<p>forced html</p>"), Options{Name: "notes.txt", Format: "html"})
+	if err != nil {
+		t.Fatalf("forced format convert: %v", err)
+	}
+	if !strings.Contains(result.Markdown, "forced html") {
+		t.Fatalf("expected forced html conversion, got %q", result.Markdown)
+	}
+}
+
+func TestUnsupportedPDFReturnsError(t *testing.T) {
+	service := NewService()
+
+	_, err := service.Convert([]byte("%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n"), Options{Name: "sample.pdf"})
+	if err == nil {
+		t.Fatal("expected unsupported pdf error")
+	}
+	if !strings.Contains(err.Error(), `unsupported input format "pdf"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func buildZip(t *testing.T, files map[string]string) []byte {
+	rawFiles := make(map[string][]byte, len(files))
+	for name, content := range files {
+		rawFiles[name] = []byte(content)
+	}
+	return buildZipBytes(t, rawFiles)
+}
+
+func buildZipBytes(t *testing.T, files map[string][]byte) []byte {
 	t.Helper()
 
 	var buffer bytes.Buffer
@@ -127,7 +252,7 @@ func buildZip(t *testing.T, files map[string]string) []byte {
 		if err != nil {
 			t.Fatalf("create zip entry: %v", err)
 		}
-		if _, err := handle.Write([]byte(content)); err != nil {
+		if _, err := handle.Write(content); err != nil {
 			t.Fatalf("write zip entry: %v", err)
 		}
 	}
@@ -135,4 +260,24 @@ func buildZip(t *testing.T, files map[string]string) []byte {
 		t.Fatalf("close zip: %v", err)
 	}
 	return buffer.Bytes()
+}
+
+func TestMarkdownTableEscapesPipes(t *testing.T) {
+	table := markdownTable([][]string{{"name", "note"}, {"alice", "a|b"}})
+	if !strings.Contains(table, "a\\|b") {
+		t.Fatalf("expected pipe escaping, got %q", table)
+	}
+}
+
+func ExampleService_Convert() {
+	service := NewService()
+	result, err := service.Convert([]byte("name,score\nalice,10\n"), Options{Name: "scores.csv"})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(strings.Contains(result.Markdown, "| alice | 10 |"))
+	// Output:
+	// true
 }

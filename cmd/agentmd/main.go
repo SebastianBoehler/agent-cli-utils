@@ -11,17 +11,28 @@ import (
 )
 
 func main() {
-	inputPath := flag.String("input", "", "read from file instead of stdin")
-	name := flag.String("name", "", "logical filename used for format detection")
-	format := flag.String("format", "markdown", "markdown, json, or yaml")
-	inputType := flag.String("type", "", "force input type like txt, html, docx, xlsx, pptx, or zip")
-	maxArchiveEntries := flag.Int("max-archive-entries", 64, "maximum files converted from a zip archive")
-	archiveDepth := flag.Int("archive-depth", 2, "maximum nested archive depth")
-	flag.Parse()
-
-	data, inferredName, err := readInput(*inputPath)
-	if err != nil {
+	if err := run(os.Args[1:], os.Stdin, os.Stdout); err != nil {
 		fail(err)
+	}
+}
+
+func run(args []string, stdin io.Reader, stdout io.Writer) error {
+	flags := flag.NewFlagSet("agentmd", flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+
+	inputPath := flags.String("input", "", "read from file instead of stdin")
+	name := flags.String("name", "", "logical filename used for format detection")
+	format := flags.String("format", "markdown", "markdown, json, or yaml")
+	inputType := flags.String("type", "", "force input type like txt, html, docx, xlsx, pptx, or zip")
+	maxArchiveEntries := flags.Int("max-archive-entries", 64, "maximum files converted from a zip archive")
+	archiveDepth := flags.Int("archive-depth", 2, "maximum nested archive depth")
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+
+	data, inferredName, err := readInput(stdin, *inputPath)
+	if err != nil {
+		return err
 	}
 
 	if *name == "" {
@@ -35,31 +46,34 @@ func main() {
 		ArchiveDepth:      *archiveDepth,
 	})
 	if err != nil {
-		fail(err)
+		return err
 	}
 
 	switch *format {
 	case "markdown":
-		if _, err := fmt.Fprintln(os.Stdout, result.Markdown); err != nil {
-			fail(err)
-		}
-	case "json", "yaml":
-		if err := output.Write(*format, result); err != nil {
-			fail(err)
-		}
+		_, err = fmt.Fprintln(stdout, result.Markdown)
+		return err
+	case "json":
+		return writeStructured(stdout, *format, result)
+	case "yaml":
+		return writeStructured(stdout, *format, result)
 	default:
-		fail(fmt.Errorf("unsupported format %q", *format))
+		return fmt.Errorf("unsupported format %q", *format)
 	}
 }
 
-func readInput(path string) ([]byte, string, error) {
+func readInput(stdin io.Reader, path string) ([]byte, string, error) {
 	if path == "" {
-		data, err := io.ReadAll(os.Stdin)
+		data, err := io.ReadAll(stdin)
 		return data, "", err
 	}
 
 	data, err := os.ReadFile(path)
 	return data, path, err
+}
+
+func writeStructured(stdout io.Writer, format string, value any) error {
+	return output.WriteTo(stdout, format, value)
 }
 
 func fail(err error) {

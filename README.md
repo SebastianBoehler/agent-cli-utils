@@ -145,6 +145,25 @@ cat ./payload.json | agentmd -name payload.json
 agentmd -input ./bundle.zip -format json
 ```
 
+### `company`
+
+Search company registries with normalized output and best-effort multi-source fallback.
+
+```bash
+company search "Acme GmbH"
+company search "Acme GmbH" --city Berlin --exact --format text
+company search "Acme" --source opencorporates --limit 5
+company quota
+```
+
+`company search` defaults to `source=all` and currently queries:
+
+- `handelsregister` for Germany's official registry search
+- `opencorporates` for enrichment and stable IDs
+- `offeneregister` as a best-effort Datasette source when available
+
+If one backend fails, the command still returns the others and includes per-source errors in the structured output. `company quota` calls OpenCorporates account status and expects `OPENCORPORATES_API_TOKEN` or `--opencorporates-api-token`.
+
 ## Install
 
 Install individual tools:
@@ -160,6 +179,7 @@ go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentrunpod@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentfal@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentprint@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentmd@latest
+go install github.com/SebastianBoehler/agent-cli-utils/cmd/company@latest
 ```
 
 Build all tools locally:
@@ -176,6 +196,7 @@ go build -o bin/agentrunpod ./cmd/agentrunpod
 go build -o bin/agentfal ./cmd/agentfal
 go build -o bin/agentprint ./cmd/agentprint
 go build -o bin/agentmd ./cmd/agentmd
+go build -o bin/company ./cmd/company
 ```
 
 For smaller static Linux binaries on low-power boards:

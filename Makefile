@@ -1,5 +1,5 @@
 BIN_DIR := bin
-TOOLS := agentq agentenv agentfs agentrun agentedit agentdoctor agentrunpod agentfal agentprint agentmd
+TOOLS := agentq agentenv agentfs agentrun agentedit agentdoctor agentrunpod agentfal agentprint agentmd agentsmtp
 
 .PHONY: build test fmtcheck check clean
 

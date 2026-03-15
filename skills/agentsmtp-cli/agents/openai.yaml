@@ -1,0 +1,4 @@
+interface:
+  display_name: "AgentSMTP CLI"
+  short_description: "Send and validate SMTP mail with Gmail or Google Workspace presets"
+  default_prompt: "Use $agentsmtp-cli to inspect, test, or send SMTP mail with structured output."

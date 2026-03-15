@@ -124,6 +124,16 @@ agentprint print -printer office https://example.com/report.pdf -color-mode mono
 
 Output defaults to JSON. `list` and `discover` also support `-format text` and `-format tsv` for quick terminal inspection.
 
+### `agentsmtp`
+
+Send or validate SMTP submission with machine-readable output, config-file loading, and provider defaults for Gmail or Google Workspace.
+
+```bash
+agentsmtp profile -provider google-workspace -from student@example.edu -password-env SMTP_PASSWORD -format text
+agentsmtp test -provider gmail -from student@gmail.com -password-env GMAIL_APP_PASSWORD
+printf 'hello from agentsmtp\n' | agentsmtp send -provider google-workspace -from student@example.edu -password-env SMTP_PASSWORD -to advisor@example.edu -subject "Status"
+```
+
 ### `agentmd`
 
 Convert common files to Markdown using a native Go binary with no Python or Node runtime.
@@ -163,7 +173,6 @@ company quota
 - `offeneregister` as a best-effort Datasette source when available
 
 If one backend fails, the command still returns the others and includes per-source errors in the structured output. `company quota` calls OpenCorporates account status and expects `OPENCORPORATES_API_TOKEN` or `--opencorporates-api-token`.
-
 ## Install
 
 Install individual tools:
@@ -180,6 +189,7 @@ go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentfal@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentprint@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentmd@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/company@latest
+go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentsmtp@latest
 ```
 
 Build all tools locally:
@@ -197,6 +207,7 @@ go build -o bin/agentfal ./cmd/agentfal
 go build -o bin/agentprint ./cmd/agentprint
 go build -o bin/agentmd ./cmd/agentmd
 go build -o bin/company ./cmd/company
+go build -o bin/agentsmtp ./cmd/agentsmtp
 ```
 
 For smaller static Linux binaries on low-power boards:

@@ -173,3 +173,79 @@ func TestWriteCreatesFile(t *testing.T) {
 		t.Fatalf("content = %q, want %q", string(got), "created\n")
 	}
 }
+
+func TestApplyRejectsInvalidSpecBeforeWrites(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "sample.txt")
+	if err := os.WriteFile(path, []byte("before\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	_, err := Apply(Request{
+		Edits: []Edit{
+			{
+				Path:   path,
+				Action: "replace",
+				Old:    "before",
+				New:    "after",
+			},
+			{
+				Path:   path,
+				Action: "insert_after",
+				New:    "boom\n",
+			},
+		},
+	}, Options{FailOnNoop: true})
+	if err == nil || !strings.Contains(err.Error(), "edit 2") || !strings.Contains(err.Error(), "requires anchor") {
+		t.Fatalf("Apply() error = %v, want indexed validation failure", err)
+	}
+
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile() error = %v", err)
+	}
+	if string(got) != "before\n" {
+		t.Fatalf("content = %q, want %q", string(got), "before\n")
+	}
+}
+
+func TestApplyStagesMultipleEditsToNewFileInDryRun(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "nested", "new.txt")
+
+	report, err := Apply(Request{
+		Edits: []Edit{
+			{
+				Path:   path,
+				Action: "write",
+				New:    "alpha\n",
+				Create: true,
+			},
+			{
+				Path:   path,
+				Action: "append",
+				New:    "beta\n",
+			},
+		},
+	}, Options{DryRun: true, FailOnNoop: true})
+	if err != nil {
+		t.Fatalf("Apply() error = %v", err)
+	}
+
+	if report.Changed != 2 {
+		t.Fatalf("Changed = %d, want 2", report.Changed)
+	}
+	if len(report.ChangedPaths) != 1 || report.ChangedPaths[0] != path {
+		t.Fatalf("ChangedPaths = %v, want [%s]", report.ChangedPaths, path)
+	}
+	if report.Results[0].Created != true {
+		t.Fatalf("first Created = false, want true")
+	}
+	if report.Results[1].Created {
+		t.Fatalf("second Created = true, want false")
+	}
+
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Fatalf("Stat() error = %v, want not exist", err)
+	}
+}

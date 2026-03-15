@@ -51,6 +51,14 @@ type EditResult struct {
 	EndLine     int    `json:"end_line,omitempty" yaml:"end_line,omitempty"`
 }
 
+type fileState struct {
+	Path     string
+	Content  string
+	Mode     os.FileMode
+	Existed  bool
+	Original string
+}
+
 func LoadRequest(payload []byte) (Request, error) {
 	trimmed := strings.TrimSpace(string(payload))
 	if trimmed == "" {
@@ -83,11 +91,12 @@ func Apply(request Request, options Options) (Report, error) {
 		ChangedPaths: make([]string, 0, len(request.Edits)),
 	}
 
+	states := make(map[string]*fileState, len(request.Edits))
 	seenChanged := make(map[string]struct{}, len(request.Edits))
-	for _, edit := range request.Edits {
-		result, err := applyOne(edit, options)
+	for index, edit := range request.Edits {
+		result, state, err := stageOne(edit, options, states)
 		if err != nil {
-			return Report{}, err
+			return Report{}, fmt.Errorf("edit %d: %w", index+1, err)
 		}
 
 		report.Results = append(report.Results, result)
@@ -97,6 +106,18 @@ func Apply(request Request, options Options) (Report, error) {
 				seenChanged[result.Path] = struct{}{}
 				report.ChangedPaths = append(report.ChangedPaths, result.Path)
 			}
+		}
+		states[result.Path] = state
+	}
+
+	if options.DryRun {
+		return report, nil
+	}
+
+	for _, path := range report.ChangedPaths {
+		state := states[path]
+		if err := writeState(state); err != nil {
+			return Report{}, err
 		}
 	}
 
@@ -124,58 +145,42 @@ func RenderText(report Report) string {
 	return builder.String()
 }
 
-func applyOne(edit Edit, options Options) (EditResult, error) {
-	if strings.TrimSpace(edit.Path) == "" {
-		return EditResult{}, fmt.Errorf("edit path is required")
-	}
-	if strings.TrimSpace(edit.Action) == "" {
-		return EditResult{}, fmt.Errorf("edit action is required for %s", edit.Path)
+func stageOne(edit Edit, options Options, states map[string]*fileState) (EditResult, *fileState, error) {
+	path, action, err := validateEdit(edit)
+	if err != nil {
+		return EditResult{}, nil, err
 	}
 
-	path := filepath.Clean(edit.Path)
-	original, mode, existed, err := readFile(path)
+	state, err := loadState(path, states)
 	if err != nil {
-		return EditResult{}, err
+		return EditResult{}, nil, err
 	}
 
-	updated, occurrences, err := transform(string(original), edit, existed, options.FailOnNoop)
+	updated, occurrences, err := transform(state.Content, edit, state.Existed, options.FailOnNoop)
 	if err != nil {
-		return EditResult{}, fmt.Errorf("%s: %w", path, err)
+		return EditResult{}, nil, fmt.Errorf("%s: %w", path, err)
 	}
 
 	result := EditResult{
 		Path:        path,
-		Action:      edit.Action,
+		Action:      action,
 		Occurrences: occurrences,
-		BeforeBytes: len(original),
+		BeforeBytes: len(state.Content),
 		AfterBytes:  len(updated),
 		StartLine:   edit.StartLine,
 		EndLine:     edit.EndLine,
-		Created:     !existed,
-		Changed:     string(original) != updated || !existed,
+		Created:     !state.Existed,
+		Changed:     state.Content != updated || !state.Existed,
 	}
 
 	if !result.Changed {
-		return result, nil
+		return result, state, nil
 	}
 
-	if options.DryRun {
-		return result, nil
-	}
-
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return EditResult{}, fmt.Errorf("%s: create parent directories: %w", path, err)
-	}
-
-	if mode == 0 {
-		mode = 0o644
-	}
-
-	if err := os.WriteFile(path, []byte(updated), mode); err != nil {
-		return EditResult{}, fmt.Errorf("%s: write file: %w", path, err)
-	}
-
-	return result, nil
+	next := *state
+	next.Content = updated
+	next.Existed = true
+	return result, &next, nil
 }
 
 func readFile(path string) ([]byte, os.FileMode, bool, error) {
@@ -193,6 +198,82 @@ func readFile(path string) ([]byte, os.FileMode, bool, error) {
 	}
 
 	return payload, info.Mode().Perm(), true, nil
+}
+
+func loadState(path string, states map[string]*fileState) (*fileState, error) {
+	if state, ok := states[path]; ok {
+		copy := *state
+		return &copy, nil
+	}
+
+	payload, mode, existed, err := readFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return &fileState{
+		Path:     path,
+		Content:  string(payload),
+		Mode:     mode,
+		Existed:  existed,
+		Original: string(payload),
+	}, nil
+}
+
+func writeState(state *fileState) error {
+	if state == nil {
+		return fmt.Errorf("missing file state")
+	}
+	if state.Content == state.Original && state.Existed {
+		return nil
+	}
+
+	if err := os.MkdirAll(filepath.Dir(state.Path), 0o755); err != nil {
+		return fmt.Errorf("%s: create parent directories: %w", state.Path, err)
+	}
+
+	mode := state.Mode
+	if mode == 0 {
+		mode = 0o644
+	}
+
+	if err := os.WriteFile(state.Path, []byte(state.Content), mode); err != nil {
+		return fmt.Errorf("%s: write file: %w", state.Path, err)
+	}
+
+	return nil
+}
+
+func validateEdit(edit Edit) (string, string, error) {
+	if strings.TrimSpace(edit.Path) == "" {
+		return "", "", fmt.Errorf("edit path is required")
+	}
+	if strings.TrimSpace(edit.Action) == "" {
+		return "", "", fmt.Errorf("edit action is required for %s", edit.Path)
+	}
+
+	path := filepath.Clean(edit.Path)
+	action := strings.ToLower(strings.TrimSpace(edit.Action))
+
+	switch action {
+	case "replace":
+		if edit.Old == "" {
+			return "", "", fmt.Errorf("%s: replace requires old", path)
+		}
+	case "insert_before", "insert_after":
+		if edit.Anchor == "" {
+			return "", "", fmt.Errorf("%s: %s requires anchor", path, action)
+		}
+	case "replace_lines":
+		if edit.StartLine <= 0 || edit.EndLine <= 0 || edit.EndLine < edit.StartLine {
+			return "", "", fmt.Errorf("%s: replace_lines requires valid start_line and end_line", path)
+		}
+	case "append", "write":
+	default:
+		return "", "", fmt.Errorf("%s: unsupported action %q", path, edit.Action)
+	}
+
+	return path, action, nil
 }
 
 func transform(content string, edit Edit, existed bool, failOnNoop bool) (string, int, error) {

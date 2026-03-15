@@ -113,8 +113,8 @@ func TestOffeneRegisterProviderSearch(t *testing.T) {
 	if len(results) != 1 {
 		t.Fatalf("len(results) = %d, want 1", len(results))
 	}
-	if results[0].SourceURL != defaultOffeneRegister {
-		t.Fatalf("SourceURL = %q, want %q", results[0].SourceURL, defaultOffeneRegister)
+	if results[0].SourceURL != siteServer.URL {
+		t.Fatalf("SourceURL = %q, want %q", results[0].SourceURL, siteServer.URL)
 	}
 }
 

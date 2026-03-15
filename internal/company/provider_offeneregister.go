@@ -76,7 +76,7 @@ func (provider *OffeneRegisterProvider) Search(ctx context.Context, req SearchRe
 		return nil, err
 	}
 
-	return parseOffeneRegisterResults(body)
+	return parseOffeneRegisterResults(body, provider.siteURL)
 }
 
 func (provider *OffeneRegisterProvider) resolveSlug(ctx context.Context) (string, error) {
@@ -135,10 +135,15 @@ func (provider *OffeneRegisterProvider) doQuery(primary *http.Request, fallbackU
 	return body, nil
 }
 
-func parseOffeneRegisterResults(body []byte) ([]CompanyResult, error) {
+func parseOffeneRegisterResults(body []byte, sourceURL string) ([]CompanyResult, error) {
 	rows, err := parseOffeneRegisterPayload(body)
 	if err != nil {
 		return nil, err
+	}
+
+	sourceURL = strings.TrimSpace(sourceURL)
+	if sourceURL == "" {
+		sourceURL = defaultOffeneRegister
 	}
 
 	results := make([]CompanyResult, 0, len(rows))
@@ -153,7 +158,7 @@ func parseOffeneRegisterResults(body []byte) ([]CompanyResult, error) {
 			Address:           stringValue(row["registered_address"]),
 			IncorporationDate: stringValue(row["incorporation_date"]),
 			DissolutionDate:   stringValue(row["dissolution_date"]),
-			SourceURL:         defaultOffeneRegister,
+			SourceURL:         sourceURL,
 			Raw:               row,
 		})
 	}

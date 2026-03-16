@@ -1,6 +1,8 @@
 package smtpx
 
 import (
+	"path/filepath"
+	"os"
 	"testing"
 	"time"
 )
@@ -51,5 +53,53 @@ func TestInspectUsesConfiguredEnvSecret(t *testing.T) {
 	}
 	if profile.SecretSource != "env:SMTP_SECRET" {
 		t.Fatalf("SecretSource = %q, want env:SMTP_SECRET", profile.SecretSource)
+	}
+}
+
+func TestInspectMissingPasswordFileDoesNotClaimSecret(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "missing.secret")
+	profile := Inspect(Config{
+		Provider:     "generic",
+		Host:         "smtp.example.com",
+		Port:         587,
+		Security:     "starttls",
+		Auth:         "password",
+		Username:     "student@example.edu",
+		From:         "student@example.edu",
+		Timeout:      10 * time.Second,
+		PasswordFile: path,
+	})
+
+	if profile.HasSecret {
+		t.Fatalf("HasSecret = true, want false")
+	}
+	if profile.SecretSource != "file:"+path {
+		t.Fatalf("SecretSource = %q, want %q", profile.SecretSource, "file:"+path)
+	}
+}
+
+func TestInspectEmptyPasswordFileDoesNotClaimSecret(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "empty.secret")
+	if err := os.WriteFile(path, []byte(" \n"), 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	profile := Inspect(Config{
+		Provider:     "generic",
+		Host:         "smtp.example.com",
+		Port:         587,
+		Security:     "starttls",
+		Auth:         "password",
+		Username:     "student@example.edu",
+		From:         "student@example.edu",
+		Timeout:      10 * time.Second,
+		PasswordFile: path,
+	})
+
+	if profile.HasSecret {
+		t.Fatalf("HasSecret = true, want false")
+	}
+	if profile.SecretSource != "file:"+path {
+		t.Fatalf("SecretSource = %q, want %q", profile.SecretSource, "file:"+path)
 	}
 }

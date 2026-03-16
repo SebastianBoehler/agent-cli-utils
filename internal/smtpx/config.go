@@ -191,7 +191,11 @@ func detectSecretSource(config Config) (string, bool) {
 			_, ok := os.LookupEnv(config.PasswordEnv)
 			return "env:" + config.PasswordEnv, ok
 		case config.PasswordFile != "":
-			return "file:" + config.PasswordFile, true
+			payload, err := os.ReadFile(config.PasswordFile)
+			if err != nil {
+				return "file:" + config.PasswordFile, false
+			}
+			return "file:" + config.PasswordFile, strings.TrimSpace(string(payload)) != ""
 		}
 	case "none":
 		return "", false

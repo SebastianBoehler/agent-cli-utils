@@ -134,6 +134,26 @@ agentsmtp test -provider gmail -from student@gmail.com -password-env GMAIL_APP_P
 printf 'hello from agentsmtp\n' | agentsmtp send -provider google-workspace -from student@example.edu -password-env SMTP_PASSWORD -to advisor@example.edu -subject "Status"
 ```
 
+### `agenttv`
+
+Discover AirPlay and DLNA-capable TVs on the local network, wake them with Wake-on-LAN, and hand off an HTTP(S) media URL for playback.
+
+This focuses on realistic network control:
+
+- AirPlay URL playback handoff
+- DLNA / UPnP MediaRenderer playback and stop
+- Wake-on-LAN for compatible TVs
+
+It does not implement universal screen mirroring, which is device-specific and usually tied to OS-level stacks rather than an open TV API.
+
+```bash
+agenttv discover -format text
+agenttv play -device "Living Room TV" -url http://192.168.1.20:8080/stream.m3u8
+agenttv play -host 192.168.1.50:7000 -protocol airplay -url https://example.com/video.mp4
+agenttv stop -device "Living Room TV"
+agenttv wake -mac AA:BB:CC:DD:EE:FF
+```
+
 ### `agentmd`
 
 Convert common files to Markdown using a native Go binary with no Python or Node runtime.
@@ -190,6 +210,7 @@ go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentprint@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentmd@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/company@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentsmtp@latest
+go install github.com/SebastianBoehler/agent-cli-utils/cmd/agenttv@latest
 ```
 
 Build all tools locally:
@@ -208,6 +229,7 @@ go build -o bin/agentprint ./cmd/agentprint
 go build -o bin/agentmd ./cmd/agentmd
 go build -o bin/company ./cmd/company
 go build -o bin/agentsmtp ./cmd/agentsmtp
+go build -o bin/agenttv ./cmd/agenttv
 ```
 
 For smaller static Linux binaries on low-power boards:

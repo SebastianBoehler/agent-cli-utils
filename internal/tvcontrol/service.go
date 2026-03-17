@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/SebastianBoehler/agent-cli-utils/internal/devicestore"
 )
 
 type Service struct {
@@ -71,7 +73,7 @@ func (service *Service) Play(ctx context.Context, options PlayOptions) (ActionRe
 
 	switch device.Protocol {
 	case ProtocolAirPlay:
-		return playAirPlay(ctx, service.client, device, mediaURL, options.StartPosition)
+		return service.playAirPlayAware(ctx, device, mediaURL, options.StartPosition)
 	case ProtocolDLNA:
 		return playDLNA(ctx, service.client, device, mediaURL)
 	default:
@@ -228,4 +230,15 @@ func hostFromURL(value string) string {
 		return ""
 	}
 	return parsed.Hostname()
+}
+
+func (service *Service) playAirPlayAware(ctx context.Context, device Device, mediaURL string, startPosition float64) (ActionResult, error) {
+	credentials, err := devicestore.LoadAppleCredentials(device.Host)
+	if err != nil {
+		return ActionResult{}, err
+	}
+	if credentials != "" {
+		return service.playAppleBridge(ctx, device.Host, mediaURL)
+	}
+	return playAirPlay(ctx, service.client, device, mediaURL, startPosition)
 }

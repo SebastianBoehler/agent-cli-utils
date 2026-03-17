@@ -57,6 +57,39 @@ func RenderActionText(result ActionResult) string {
 	return builder.String()
 }
 
+func RenderProbeText(result ProbeResult) string {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "target: %s\n", result.Target)
+	if result.Device != nil {
+		fmt.Fprintf(&builder, "device: %s\n", result.Device.Name)
+	}
+	for _, endpoint := range result.Endpoints {
+		fmt.Fprintf(&builder, "%s reachable=%t", endpoint.Name, endpoint.Reachable)
+		if endpoint.HTTPStatus > 0 {
+			fmt.Fprintf(&builder, " http_status=%d", endpoint.HTTPStatus)
+		}
+		fmt.Fprintf(&builder, " url=%s\n", endpoint.URL)
+	}
+	for _, hint := range result.Hints {
+		fmt.Fprintf(&builder, "hint: %s\n", hint)
+	}
+	return builder.String()
+}
+
+func RenderPairText(result PairResult) string {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "protocol: %s\n", result.Protocol)
+	fmt.Fprintf(&builder, "target: %s\n", result.Target)
+	fmt.Fprintf(&builder, "ok: %t\n", result.OK)
+	if result.Detail != "" {
+		fmt.Fprintf(&builder, "detail: %s\n", result.Detail)
+	}
+	if result.Token != "" {
+		fmt.Fprintf(&builder, "token: %s\n", result.Token)
+	}
+	return builder.String()
+}
+
 func RenderWakeText(result WakeResult) string {
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "target: %s\n", result.Target)

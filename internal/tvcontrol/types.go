@@ -5,6 +5,8 @@ import "time"
 const (
 	ProtocolAirPlay = "airplay"
 	ProtocolDLNA    = "dlna"
+	ProtocolSamsung = "samsung"
+	ProtocolDIAL    = "dial"
 )
 
 type Device struct {
@@ -31,6 +33,27 @@ type DiscoverResult struct {
 	Warnings []string `json:"warnings,omitempty" yaml:"warnings,omitempty"`
 }
 
+type ProbeOptions struct {
+	Device  string
+	Host    string
+	Timeout time.Duration
+}
+
+type EndpointProbe struct {
+	Name       string `json:"name" yaml:"name"`
+	URL        string `json:"url" yaml:"url"`
+	Reachable  bool   `json:"reachable" yaml:"reachable"`
+	HTTPStatus int    `json:"http_status,omitempty" yaml:"http_status,omitempty"`
+	Detail     string `json:"detail,omitempty" yaml:"detail,omitempty"`
+}
+
+type ProbeResult struct {
+	Target    string          `json:"target" yaml:"target"`
+	Device    *Device         `json:"device,omitempty" yaml:"device,omitempty"`
+	Endpoints []EndpointProbe `json:"endpoints" yaml:"endpoints"`
+	Hints     []string        `json:"hints,omitempty" yaml:"hints,omitempty"`
+}
+
 type PlayOptions struct {
 	Device        string
 	Host          string
@@ -47,6 +70,36 @@ type StopOptions struct {
 	ControlURL string
 	Protocol   string
 	Timeout    time.Duration
+}
+
+type PairOptions struct {
+	Host     string
+	Protocol string
+	Name     string
+	PIN      string
+	Timeout  time.Duration
+}
+
+type PairResult struct {
+	Protocol string `json:"protocol" yaml:"protocol"`
+	Target   string `json:"target" yaml:"target"`
+	OK       bool   `json:"ok" yaml:"ok"`
+	Detail   string `json:"detail,omitempty" yaml:"detail,omitempty"`
+	Token    string `json:"token,omitempty" yaml:"token,omitempty"`
+}
+
+type RemoteOptions struct {
+	Host    string
+	Key     string
+	Timeout time.Duration
+}
+
+type LaunchOptions struct {
+	Host    string
+	AppID   string
+	AppType string
+	MetaTag string
+	Timeout time.Duration
 }
 
 type ActionResult struct {

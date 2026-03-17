@@ -21,6 +21,10 @@ func main() {
 	switch os.Args[1] {
 	case "discover":
 		runDiscover(service, os.Args[2:])
+	case "probe":
+		runProbe(service, os.Args[2:])
+	case "pair":
+		runPair(service, os.Args[2:])
 	case "play":
 		runPlay(service, os.Args[2:])
 	case "stop":
@@ -47,6 +51,46 @@ func runDiscover(service *tvcontrol.Service, args []string) {
 	writeOutput(*format, result, func() string { return tvcontrol.RenderDiscoverText(result) })
 }
 
+func runProbe(service *tvcontrol.Service, args []string) {
+	flags := newFlagSet("probe")
+	device := flags.String("device", "", "discovered device name, id, or host fragment")
+	host := flags.String("host", "", "direct host to probe")
+	timeout := flags.Duration("timeout", 5*time.Second, "probe timeout")
+	format := flags.String("format", "json", "json, yaml, or text")
+	parseFlags(flags, args)
+
+	result, err := service.Probe(context.Background(), tvcontrol.ProbeOptions{
+		Device:  *device,
+		Host:    *host,
+		Timeout: *timeout,
+	})
+	if err != nil {
+		fail(err)
+	}
+	writeOutput(*format, result, func() string { return tvcontrol.RenderProbeText(result) })
+}
+
+func runPair(service *tvcontrol.Service, args []string) {
+	flags := newFlagSet("pair")
+	host := flags.String("host", "", "direct host to pair")
+	protocol := flags.String("protocol", "", "airplay")
+	name := flags.String("name", "agenttv", "pairing name")
+	pin := flags.String("pin", "", "optional Apple TV AirPlay PIN")
+	timeout := flags.Duration("timeout", 20*time.Second, "pairing timeout")
+	format := flags.String("format", "json", "json, yaml, or text")
+	parseFlags(flags, args)
+
+	options := tvcontrol.PairOptions{Host: *host, Protocol: *protocol, Name: *name, PIN: *pin, Timeout: *timeout}
+	if *protocol != tvcontrol.ProtocolAirPlay {
+		fail(fmt.Errorf("unsupported pair protocol %q", *protocol))
+	}
+	result, err := service.PairApple(context.Background(), options)
+	if err != nil {
+		fail(err)
+	}
+	writeOutput(*format, result, func() string { return tvcontrol.RenderPairText(result) })
+}
+
 func runPlay(service *tvcontrol.Service, args []string) {
 	flags := newFlagSet("play")
 	device := flags.String("device", "", "discovered device name, id, or host fragment")
@@ -55,7 +99,7 @@ func runPlay(service *tvcontrol.Service, args []string) {
 	protocol := flags.String("protocol", "auto", "auto, airplay, or dlna")
 	url := flags.String("url", "", "HTTP(S) media URL to hand off to the TV")
 	startPosition := flags.Float64("start-position", 0, "AirPlay playback start position in seconds fraction, usually 0-1")
-	timeout := flags.Duration("timeout", 8*time.Second, "request timeout")
+	timeout := flags.Duration("timeout", 30*time.Second, "request timeout")
 	format := flags.String("format", "json", "json, yaml, or text")
 	parseFlags(flags, args)
 
@@ -149,7 +193,7 @@ func writeOutput(format string, value any, renderText func() string) {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: agenttv <discover|play|stop|wake> [flags]")
+	fmt.Fprintln(os.Stderr, "usage: agenttv <discover|probe|pair|play|stop|wake> [flags]")
 }
 
 func fail(err error) {

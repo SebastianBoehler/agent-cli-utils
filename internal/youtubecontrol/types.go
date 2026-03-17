@@ -33,6 +33,39 @@ type StatusResult struct {
 	Device Device `json:"device" yaml:"device"`
 }
 
+type SearchOptions struct {
+	Query      string
+	Language   string
+	Region     string
+	Duration   string
+	Caption    string
+	Order      string
+	SafeSearch string
+	MaxResults int
+	Timeout    time.Duration
+}
+
+type SearchItem struct {
+	VideoID      string `json:"video_id" yaml:"video_id"`
+	Title        string `json:"title" yaml:"title"`
+	ChannelTitle string `json:"channel_title,omitempty" yaml:"channel_title,omitempty"`
+	PublishedAt  string `json:"published_at,omitempty" yaml:"published_at,omitempty"`
+	Description  string `json:"description,omitempty" yaml:"description,omitempty"`
+	URL          string `json:"url" yaml:"url"`
+}
+
+type SearchResult struct {
+	Query      string       `json:"query" yaml:"query"`
+	Language   string       `json:"language,omitempty" yaml:"language,omitempty"`
+	Region     string       `json:"region,omitempty" yaml:"region,omitempty"`
+	Duration   string       `json:"duration,omitempty" yaml:"duration,omitempty"`
+	Caption    string       `json:"caption,omitempty" yaml:"caption,omitempty"`
+	Order      string       `json:"order,omitempty" yaml:"order,omitempty"`
+	SafeSearch string       `json:"safe_search,omitempty" yaml:"safe_search,omitempty"`
+	MaxResults int          `json:"max_results" yaml:"max_results"`
+	Items      []SearchItem `json:"items" yaml:"items"`
+}
+
 type PlayOptions struct {
 	Device      string
 	Host        string

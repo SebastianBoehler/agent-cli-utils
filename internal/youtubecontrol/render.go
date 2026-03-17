@@ -42,6 +42,45 @@ func RenderStatusText(result StatusResult) string {
 	return builder.String()
 }
 
+func RenderSearchText(result SearchResult) string {
+	var builder strings.Builder
+	fmt.Fprintf(&builder, "query: %s\n", result.Query)
+	if result.Language != "" {
+		fmt.Fprintf(&builder, "language: %s\n", result.Language)
+	}
+	if result.Region != "" {
+		fmt.Fprintf(&builder, "region: %s\n", result.Region)
+	}
+	if result.Duration != "" {
+		fmt.Fprintf(&builder, "duration: %s\n", result.Duration)
+	}
+	if result.Caption != "" {
+		fmt.Fprintf(&builder, "caption: %s\n", result.Caption)
+	}
+	if result.Order != "" {
+		fmt.Fprintf(&builder, "order: %s\n", result.Order)
+	}
+	if result.SafeSearch != "" {
+		fmt.Fprintf(&builder, "safe_search: %s\n", result.SafeSearch)
+	}
+	fmt.Fprintf(&builder, "max_results: %d\n", result.MaxResults)
+	for index, item := range result.Items {
+		fmt.Fprintf(&builder, "%d. %s\n", index+1, item.Title)
+		fmt.Fprintf(&builder, "   video_id: %s\n", item.VideoID)
+		if item.ChannelTitle != "" {
+			fmt.Fprintf(&builder, "   channel: %s\n", item.ChannelTitle)
+		}
+		if item.PublishedAt != "" {
+			fmt.Fprintf(&builder, "   published_at: %s\n", item.PublishedAt)
+		}
+		fmt.Fprintf(&builder, "   url: %s\n", item.URL)
+	}
+	if len(result.Items) == 0 {
+		builder.WriteString("no results\n")
+	}
+	return builder.String()
+}
+
 func RenderActionText(result ActionResult) string {
 	var builder strings.Builder
 	fmt.Fprintf(&builder, "operation: %s\n", result.Operation)

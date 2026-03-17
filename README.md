@@ -182,6 +182,7 @@ Discover DIAL YouTube receivers on the local network and send public DIAL-style 
 This stays on the public path:
 
 - discover receivers exposing a YouTube DIAL app endpoint
+- search YouTube videos via the public YouTube Data API using `YOUTUBE_API_KEY`
 - inspect current YouTube app state on a receiver
 - launch a YouTube video using public-style `launch=dial` and `v=<video-id>` parameters
 
@@ -189,12 +190,13 @@ Examples:
 
 ```bash
 agentyt discover -format text
+agentyt search -q "lofi hip hop" -lang en -region US -duration long -max-results 5
 agentyt status -device "Samsung 6 Series"
 agentyt play -host 192.168.178.86 -video https://www.youtube.com/watch?v=wU90dfDDUiQ
 agentyt play -device "Samsung 6 Series" -video wU90dfDDUiQ -start 43
 ```
 
-`agentyt` does not implement YouTube's private pairing or queue-control flows. It only uses the public DIAL-style launch surface that some TVs expose.
+`agentyt search` uses the YouTube Data API and requires `YOUTUBE_API_KEY`. `agentyt` does not implement YouTube's private pairing or queue-control flows. It only uses the public Data API and the DIAL-style launch surface that some TVs expose.
 
 ### `agentmd`
 

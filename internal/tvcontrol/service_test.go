@@ -30,6 +30,13 @@ func TestNormalizeMediaURL(t *testing.T) {
 	}
 }
 
+func TestBaseURLWrapsIPv6Hosts(t *testing.T) {
+	value := baseURL("fe80::1234", 7000)
+	if value != "http://[fe80::1234]:7000" {
+		t.Fatalf("unexpected base url %q", value)
+	}
+}
+
 func mustParseURL(t *testing.T, value string) *neturl.URL {
 	t.Helper()
 	parsed, err := neturl.Parse(value)

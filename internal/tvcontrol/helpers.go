@@ -76,7 +76,10 @@ func baseURL(host string, port int) string {
 	if port <= 0 {
 		port = 80
 	}
-	return fmt.Sprintf("http://%s:%d", host, port)
+	return (&neturl.URL{
+		Scheme: "http",
+		Host:   net.JoinHostPort(host, fmt.Sprintf("%d", port)),
+	}).String()
 }
 
 func uniqueSorted(values []string) []string {

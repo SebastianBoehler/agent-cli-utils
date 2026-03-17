@@ -136,11 +136,13 @@ printf 'hello from agentsmtp\n' | agentsmtp send -provider google-workspace -fro
 
 ### `agenttv`
 
-Discover AirPlay and DLNA-capable TVs on the local network, wake them with Wake-on-LAN, and hand off an HTTP(S) media URL for playback.
+Discover AirPlay, DLNA, and DIAL endpoints on the local network, wake compatible devices, pair AirPlay where needed, and hand off media.
 
 This focuses on realistic network control:
 
+- probe per-device protocol reachability and auth requirements
 - AirPlay URL playback handoff
+- experimental Apple TV AirPlay pairing via `atvremote` and playback via an embedded `pyatv` helper
 - DLNA / UPnP MediaRenderer playback and stop
 - Wake-on-LAN for compatible TVs
 
@@ -148,11 +150,51 @@ It does not implement universal screen mirroring, which is device-specific and u
 
 ```bash
 agenttv discover -format text
+agenttv probe -device "Samsung 6 Series"
+agenttv pair -protocol airplay -host 192.168.178.33 -pin 1234
 agenttv play -device "Living Room TV" -url http://192.168.1.20:8080/stream.m3u8
 agenttv play -host 192.168.1.50:7000 -protocol airplay -url https://example.com/video.mp4
 agenttv stop -device "Living Room TV"
 agenttv wake -mac AA:BB:CC:DD:EE:FF
 ```
+
+`agenttv play` will use stored Apple AirPlay credentials when present for the target host. Apple TV pairing currently relies on a locally installed `atvremote` binary, while Apple playback uses an embedded `pyatv` helper that keeps the AirPlay session open longer and reports the raw `/play` response. Apple playback should still be treated as experimental.
+
+### `agentsamsung`
+
+Samsung-native TV control with token pairing, remote keys, and app launch commands.
+
+Examples:
+
+```bash
+agentsamsung pair -host 192.168.178.86
+agentsamsung remote -host 192.168.178.86 -key KEY_HOME
+agentsamsung remote -host 192.168.178.86 -key KEY_SOURCE
+agentsamsung launch -host 192.168.178.86 -app-id 111299001912
+```
+
+`agentsamsung` is the place for Samsung-specific auth and control flows. `agenttv` stays focused on generic AirPlay, DLNA, DIAL, and Wake-on-LAN behavior.
+
+### `agentyt`
+
+Discover DIAL YouTube receivers on the local network and send public DIAL-style launch requests using YouTube video IDs or URLs.
+
+This stays on the public path:
+
+- discover receivers exposing a YouTube DIAL app endpoint
+- inspect current YouTube app state on a receiver
+- launch a YouTube video using public-style `launch=dial` and `v=<video-id>` parameters
+
+Examples:
+
+```bash
+agentyt discover -format text
+agentyt status -device "Samsung 6 Series"
+agentyt play -host 192.168.178.86 -video https://www.youtube.com/watch?v=wU90dfDDUiQ
+agentyt play -device "Samsung 6 Series" -video wU90dfDDUiQ -start 43
+```
+
+`agentyt` does not implement YouTube's private pairing or queue-control flows. It only uses the public DIAL-style launch surface that some TVs expose.
 
 ### `agentmd`
 

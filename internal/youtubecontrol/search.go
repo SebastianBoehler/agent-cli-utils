@@ -178,8 +178,12 @@ func normalizeOrder(value string) (string, error) {
 	switch value {
 	case "", "relevance":
 		return "", nil
-	case "date", "rating", "title", "videocount", "viewcount":
+	case "date", "rating", "title":
 		return value, nil
+	case "videocount":
+		return "videoCount", nil
+	case "viewcount":
+		return "viewCount", nil
 	default:
 		return "", fmt.Errorf("unsupported order %q", value)
 	}

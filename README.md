@@ -134,6 +134,24 @@ agentsmtp test -provider gmail -from student@gmail.com -password-env GMAIL_APP_P
 printf 'hello from agentsmtp\n' | agentsmtp send -provider google-workspace -from student@example.edu -password-env SMTP_PASSWORD -to advisor@example.edu -subject "Status"
 ```
 
+### `agentmatter`
+
+Discover Matter DNS-SD services on the local network with normalized output.
+
+Day-1 support is intentionally narrow:
+
+- browse the standard Matter Bonjour service types `_matter._tcp`, `_matterc._udp`, and `_matterd._udp`
+- capture SRV and TXT metadata such as discriminator and vendor/product ids
+- return JSON, YAML, or human-readable text for local inspection and agent workflows
+
+It does not implement commissioning, pairing, subscriptions, or cluster commands. Treat it as a lightweight network discovery helper that can sit in front of `chip-tool` or another full Matter controller.
+
+```bash
+agentmatter discover
+agentmatter discover -timeout 6s -format text
+agentmatter discover -format yaml
+```
+
 ### `agenttv`
 
 Discover AirPlay, DLNA, and DIAL endpoints on the local network, wake compatible devices, pair AirPlay where needed, and hand off media.
@@ -254,6 +272,7 @@ go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentprint@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentmd@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/company@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentsmtp@latest
+go install github.com/SebastianBoehler/agent-cli-utils/cmd/agentmatter@latest
 go install github.com/SebastianBoehler/agent-cli-utils/cmd/agenttv@latest
 ```
 
@@ -273,6 +292,7 @@ go build -o bin/agentprint ./cmd/agentprint
 go build -o bin/agentmd ./cmd/agentmd
 go build -o bin/company ./cmd/company
 go build -o bin/agentsmtp ./cmd/agentsmtp
+go build -o bin/agentmatter ./cmd/agentmatter
 go build -o bin/agenttv ./cmd/agenttv
 ```
 
@@ -338,6 +358,13 @@ agentprint ensure -printer office -match "Office Laser" -default
 agentprint print -printer office -input ./document.pdf -copies 2 -duplex -fit-to-page
 ```
 
+Inspect local Matter services before handing control to a full controller:
+
+```bash
+agentmatter discover -format text
+agentmatter discover | agentq -q .devices[0].service -format raw
+```
+
 Convert mixed agent artifacts into Markdown for indexing:
 
 ```bash
@@ -375,6 +402,7 @@ agentrunpod result -endpoint "$RUNPOD_ENDPOINT_ID" -request "$JOB_ID"
 - exact-match file editing for agent-generated changes
 - preflight dependency checks for workflows like SMB, SSH, and HTTP access
 - bounded CUPS printer discovery, queue repair, and print submission
+- local Matter DNS-SD discovery for home automation workflows
 - native Markdown conversion for common agent-facing formats
 
 ## CI

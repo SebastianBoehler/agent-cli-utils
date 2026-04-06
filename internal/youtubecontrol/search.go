@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const youtubeSearchEndpoint = "https://www.googleapis.com/youtube/v3/search"
+var youtubeSearchEndpoint = "https://www.googleapis.com/youtube/v3/search"
 
 type youtubeSearchResponse struct {
 	Items []struct {
@@ -66,10 +66,12 @@ func (service *Service) Search(ctx context.Context, options SearchOptions) (Sear
 	} else if value != "" {
 		values.Set("videoCaption", value)
 	}
-	if value, err := normalizeOrder(options.Order); err != nil {
+	normalizedOrder, err := normalizeOrder(options.Order)
+	if err != nil {
 		return SearchResult{}, err
-	} else if value != "" {
-		values.Set("order", value)
+	}
+	if normalizedOrder != "" {
+		values.Set("order", normalizedOrder)
 	}
 	if value, err := normalizeSafeSearch(options.SafeSearch); err != nil {
 		return SearchResult{}, err
@@ -101,7 +103,7 @@ func (service *Service) Search(ctx context.Context, options SearchOptions) (Sear
 		Region:     normalizeRegion(options.Region),
 		Duration:   strings.TrimSpace(options.Duration),
 		Caption:    strings.TrimSpace(options.Caption),
-		Order:      strings.TrimSpace(options.Order),
+		Order:      normalizedOrder,
 		SafeSearch: strings.TrimSpace(options.SafeSearch),
 		MaxResults: clampMaxResults(options.MaxResults),
 		Items:      make([]SearchItem, 0, len(payload.Items)),

@@ -1,6 +1,13 @@
 package youtubecontrol
 
-import "testing"
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"testing"
+	"time"
+)
 
 func TestNormalizeOrder(t *testing.T) {
 	t.Parallel()
@@ -37,5 +44,47 @@ func TestNormalizeOrder(t *testing.T) {
 				t.Fatalf("normalizeOrder(%q) = %q, want %q", tt.input, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestSearchCanonicalizesOrderInResult(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if got := request.URL.Query().Get("order"); got != "viewCount" {
+			t.Fatalf("request order = %q, want %q", got, "viewCount")
+		}
+		writer.Header().Set("Content-Type", "application/json")
+		_, _ = writer.Write([]byte(`{"items":[]}`))
+	}))
+	defer server.Close()
+
+	previousEndpoint := youtubeSearchEndpoint
+	youtubeSearchEndpoint = server.URL
+	defer func() {
+		youtubeSearchEndpoint = previousEndpoint
+	}()
+
+	previousAPIKey, hadAPIKey := os.LookupEnv("YOUTUBE_API_KEY")
+	if err := os.Setenv("YOUTUBE_API_KEY", "test-key"); err != nil {
+		t.Fatalf("set YOUTUBE_API_KEY: %v", err)
+	}
+	defer func() {
+		if hadAPIKey {
+			_ = os.Setenv("YOUTUBE_API_KEY", previousAPIKey)
+			return
+		}
+		_ = os.Unsetenv("YOUTUBE_API_KEY")
+	}()
+
+	service := NewService(server.Client())
+	result, err := service.Search(context.Background(), SearchOptions{
+		Query:   "lofi",
+		Order:   "VIEWCOUNT",
+		Timeout: 2 * time.Second,
+	})
+	if err != nil {
+		t.Fatalf("Search() unexpected error: %v", err)
+	}
+	if result.Order != "viewCount" {
+		t.Fatalf("Search().Order = %q, want %q", result.Order, "viewCount")
 	}
 }

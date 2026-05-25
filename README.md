@@ -429,6 +429,7 @@ Available skills:
 - `$agentrunpod-cli`
 - `$agentfal-cli`
 - `$agentprint-cli`
+- `$company-cli`
 
 Each skill tells another Codex instance when to use the CLI, how to invoke it from this repo or from `PATH`, and which flags are the right default for agent workflows.
 

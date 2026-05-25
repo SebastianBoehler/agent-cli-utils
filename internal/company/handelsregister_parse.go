@@ -52,42 +52,83 @@ func parseHandelsregisterResults(body []byte, registryURL string, baseURL string
 
 	results := make([]CompanyResult, 0, len(rows))
 	for _, row := range rows {
-		cells := rowCells(row)
-		if len(cells) < 5 {
+		result, ok := parseHandelsregisterRow(row, registryURL, baseURL)
+		if !ok {
 			continue
 		}
-
-		courtField := nodeText(cells[1])
-		name := nodeText(cells[2])
-		city := nodeText(cells[3])
-		status := nodeText(cells[4])
-		court, registerNumber := splitCourtAndRegister(courtField)
-		sourceURL := firstRowLink(row, baseURL)
-		raw := map[string]any{
-			"court_register": courtField,
-			"name":           name,
-			"city":           city,
-			"status":         status,
-		}
-		if sourceURL != "" {
-			raw["source_url"] = sourceURL
-		}
-
-		results = append(results, CompanyResult{
-			Source:         SourceHandelsregister,
-			Name:           name,
-			RegisterNumber: registerNumber,
-			Jurisdiction:   defaultCountry,
-			Court:          court,
-			City:           city,
-			Status:         status,
-			RegistryURL:    registryURL,
-			SourceURL:      sourceURL,
-			Raw:            raw,
-		})
+		results = append(results, result)
 	}
 
 	return results, nil
+}
+
+func parseHandelsregisterRow(row *html.Node, registryURL string, baseURL string) (CompanyResult, bool) {
+	cells := rowCells(row)
+	if len(cells) >= 5 {
+		return buildHandelsregisterResult(
+			nodeText(cells[1]),
+			nodeText(cells[2]),
+			nodeText(cells[3]),
+			nodeText(cells[4]),
+			row,
+			registryURL,
+			baseURL,
+		), true
+	}
+
+	courtField := nodeText(findNode(row, func(node *html.Node) bool {
+		return node.Type == html.ElementNode && hasClass(node, "fontTableNameSize")
+	}))
+	name := nodeText(findNode(row, func(node *html.Node) bool {
+		if node.Type != html.ElementNode || !hasClass(node, "marginLeft20") {
+			return false
+		}
+		text := nodeText(node)
+		return text != "" && !strings.HasPrefix(text, "1.)")
+	}))
+	verticalText := findNodes(row, func(node *html.Node) bool {
+		return node.Type == html.ElementNode && hasClass(node, "verticalText")
+	})
+	city := ""
+	status := ""
+	if len(verticalText) > 0 {
+		city = nodeText(verticalText[0])
+	}
+	if len(verticalText) > 1 {
+		status = nodeText(verticalText[1])
+	}
+
+	if courtField == "" || name == "" {
+		return CompanyResult{}, false
+	}
+	return buildHandelsregisterResult(courtField, name, city, status, row, registryURL, baseURL), true
+}
+
+func buildHandelsregisterResult(courtField string, name string, city string, status string, row *html.Node, registryURL string, baseURL string) CompanyResult {
+	court, registerNumber := splitCourtAndRegister(courtField)
+	sourceURL := firstRowLink(row, baseURL)
+	raw := map[string]any{
+		"court_register": courtField,
+		"name":           name,
+		"city":           city,
+		"status":         status,
+	}
+	if sourceURL != "" {
+		raw["source_url"] = sourceURL
+	}
+
+	return CompanyResult{
+		Source:         SourceHandelsregister,
+		Name:           name,
+		RegisterNumber: registerNumber,
+		Jurisdiction:   defaultCountry,
+		Court:          court,
+		City:           city,
+		Status:         status,
+		RegistryURL:    registryURL,
+		SourceURL:      sourceURL,
+		Raw:            raw,
+	}
 }
 
 func rowCells(row *html.Node) []*html.Node {
@@ -108,6 +149,15 @@ func splitCourtAndRegister(value string) (string, string) {
 
 	court := cleanText(strings.Replace(value, registerNumber, "", 1))
 	return court, registerNumber
+}
+
+func hasClass(node *html.Node, className string) bool {
+	for _, class := range strings.Fields(attr(node, "class")) {
+		if class == className {
+			return true
+		}
+	}
+	return false
 }
 
 func firstRowLink(row *html.Node, baseURL string) string {

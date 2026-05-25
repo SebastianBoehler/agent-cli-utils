@@ -86,6 +86,40 @@ func TestHandelsregisterProviderSearch(t *testing.T) {
 	}
 }
 
+func TestParseHandelsregisterNestedResultRows(t *testing.T) {
+	html := `<html><body><table role="grid"><tbody>
+<tr data-ri="0"><td colspan="9"><table><tbody>
+<tr><td class="fontTableNameSize" colspan="5">Hessen <span class="fontWeightBold"> Amtsgericht Frankfurt am Main HRB 30000 </span></td></tr>
+<tr><td class="paddingBottom20Px" colspan="5"><span class="marginLeft20">Deutsche Bank AG</span></td>
+<td class="sitzSuchErgebnisse"><span class="verticalText ">Frankfurt am Main</span></td>
+<td><span class="verticalText">aktuell</span></td></tr>
+</tbody></table></td></tr>
+</tbody></table></body></html>`
+
+	results, err := parseHandelsregisterResults([]byte(html), "https://registry.example/search", "https://registry.example")
+	if err != nil {
+		t.Fatalf("parseHandelsregisterResults() error = %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("len(results) = %d, want 1", len(results))
+	}
+	if results[0].Name != "Deutsche Bank AG" {
+		t.Fatalf("Name = %q, want Deutsche Bank AG", results[0].Name)
+	}
+	if results[0].RegisterNumber != "HRB 30000" {
+		t.Fatalf("RegisterNumber = %q, want HRB 30000", results[0].RegisterNumber)
+	}
+	if results[0].Court != "Hessen Amtsgericht Frankfurt am Main" {
+		t.Fatalf("Court = %q", results[0].Court)
+	}
+	if results[0].City != "Frankfurt am Main" {
+		t.Fatalf("City = %q", results[0].City)
+	}
+	if results[0].Status != "aktuell" {
+		t.Fatalf("Status = %q", results[0].Status)
+	}
+}
+
 func TestOffeneRegisterProviderSearch(t *testing.T) {
 	dbServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		if request.URL.Path != "/openregister-test.json" {

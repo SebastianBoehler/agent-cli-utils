@@ -1,8 +1,8 @@
 package smtpx
 
 import (
-	"path/filepath"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )

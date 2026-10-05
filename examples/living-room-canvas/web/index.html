@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Living Room Canvas</title>
+<style>html,body{margin:0;width:100%;height:100%;background:#101827;overflow:hidden}iframe{width:100%;height:100%;border:0}#error{position:fixed;bottom:18px;left:24px;color:#ffb7a6;background:#101827;font:20px system-ui;padding:10px;display:none}</style>
+</head><body><iframe id="scene" title="Live visual explanation"></iframe><div id="error" role="alert"></div>
+<script>
+let revision='';
+async function refresh(){
+ const error=document.getElementById('error');
+ try{
+  const response=await fetch('scene.json',{cache:'no-store'});
+  if(!response.ok)throw Error(`Display connection failed (${response.status})`);
+  const scene=await response.json();
+  if(typeof scene.path!=='string'||typeof scene.revision!=='string')throw Error('Invalid visual description');
+  if(scene.revision!==revision){document.getElementById('scene').src=scene.path+'?revision='+encodeURIComponent(scene.revision);revision=scene.revision;}
+  error.style.display='none';
+ }catch(e){error.textContent=e.message;error.style.display='block';}
+}
+refresh();setInterval(refresh,500);
+</script></body></html>
